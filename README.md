@@ -78,7 +78,7 @@ npm run build:pages   # 生成项目根目录下的 _worker.js
 4. Pages 项目 → Settings → Environment variables：
    - 添加 `admin_password`（Production 和 Preview 都建议设置）
 5. 部署完成后地址形如 `https://你的项目.pages.dev`，同样支持绑定自定义域名。
-（也可以选择下载`_worker.zip`文件，使用本地上传的方式来进行部署，推荐本地上传方法）
+（也可以选择`Releases`下载`_worker.zip`文件，使用本地上传的方式来进行部署，推荐本地上传方法）
 
 > 说明：`_worker.js` 是 esbuild 把 `src/` 下所有 ES module 打包成的单文件产物，逻辑与
 > Workers 版完全一致，因此两种部署方式功能完全对等，任选其一即可。

@@ -1,0 +1,19 @@
+name = "cf-llm-gateway"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+compatibility_flags = ["nodejs_compat"]
+
+# KV namespace used to persist providers / models / generated API keys.
+# Create it with:  wrangler kv:namespace create "KV"
+# then paste the returned id below (or bind it in the dashboard for Pages).
+kv_namespaces = [
+  { binding = "KV", id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID" }
+]
+
+# admin_password is read from env.admin_password at runtime.
+# Do NOT commit a real password here. Prefer:
+#   wrangler secret put admin_password
+# Or set it as a plain "Variable" (type: text) named admin_password
+# in Workers/Pages -> Settings -> Variables, as requested by the project spec.
+[vars]
+admin_password = "change-me"

@@ -1,0 +1,17 @@
+{
+  "name": "cf-llm-gateway",
+  "version": "1.0.0",
+  "description": "Aggregate multiple LLM provider API keys behind one OpenAI-compatible endpoint, deployable to Cloudflare Workers or Pages.",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build:pages": "esbuild src/index.js --bundle --format=esm --outfile=_worker.js --platform=neutral --target=es2022"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.5",
+    "wrangler": "^3.78.0"
+  }
+}

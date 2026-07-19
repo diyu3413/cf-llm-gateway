@@ -1,12 +1,5 @@
 # cf-llm-gateway
-
-把多家大模型服务商（DeepSeek / NVIDIA NIM / Google Gemini / 阿里通义千问 / 小米 MiMo /
-OpenAI 等，任何 OpenAI 兼容接口）的 API Key 汇聚到一个 Cloudflare Worker/Pages 项目里，
-对外统一暴露一个**新的、随时可重置的 API Key**，同时提供 **OpenAI** 和 **Anthropic**
-两种标准接口格式，方便接入 Claude Code、AstrBot 等任何第三方项目；并借助 Cloudflare
-全球边缘网络，帮你"曲线"访问在国内直连不稳定的模型服务商。
-
-MIT 协议开源。
+把多家大模型服务商（NVIDIA NIM/Google Gemini/OpenAI等）的API Key汇聚到Cloudflare Worker/Pages项目里， 对外统一暴露一个新的、随时可重置的 API Key，同时提供OpenAI和Anthropic两种标准接口格式，可直接接入Claude Code、AstrBot等任何第三方项目;并借助cf全球边缘网络，帮你访问在国内被wall的模型服务商。
 
 ## 功能一览
 

@@ -78,6 +78,7 @@ npm run build:pages   # 生成项目根目录下的 _worker.js
 4. Pages 项目 → Settings → Environment variables：
    - 添加 `admin_password`（Production 和 Preview 都建议设置）
 5. 部署完成后地址形如 `https://你的项目.pages.dev`，同样支持绑定自定义域名。
+
 （也可以选择`Releases`下载`_worker.zip`文件，使用本地上传的方式来进行部署，推荐本地上传方法）
 
 > 说明：`_worker.js` 是 esbuild 把 `src/` 下所有 ES module 打包成的单文件产物，逻辑与
@@ -96,7 +97,6 @@ npm run build:pages   # 生成项目根目录下的 _worker.js
 5. 在"对外 API Key"卡片里点击"生成新密钥"：
    - 第一步会弹出命名弹窗，**必须填写备注**才能继续（留空点击"下一步"会提示"请输入密钥备注"）
    - 填写后自动跳转到第二个弹窗，完整显示生成的密钥（仅这一次），点击"复制"按钮即可复制到剪贴板
-   - **请务必在关闭弹窗前保存好密钥**：出于安全考虑，面板不会再展示已生成密钥的列表
 6. 把下面两组信息填到 Claude Code / AstrBot 等项目的"自定义 OpenAI / Anthropic 服务"配置里
    （两种格式的具体 Base URL 也能在"接入方式"卡片里直接复制）：
    - OpenAI 兼容：Base URL `https://你的域名/v1`，`Authorization: Bearer <key>`
@@ -134,13 +134,6 @@ claude
   停止后续尝试；全部失败则返回 `403 all_models_unavailable`。
 - 请求 `model` 字段是一个已知的具体模型 id（如 `deepseek/deepseek-chat`，可从
   `GET /v1/models` 获取）：只调用这一个模型，不做故障转移，失败会把上游错误原样透传。
-
-## 安全建议
-
-- `admin_password` 建议用 `wrangler secret put admin_password`（Workers）设置为 Secret，
-  而不是明文 Variable；Pages 目前只支持普通 Environment variable，请设置足够复杂的密码。
-- 对外生成的 API Key 只存储 SHA-256 哈希，数据库/KV 泄露也不会直接暴露明文 Key。
-- 建议为不同的外部项目（Claude Code、AstrBot……）分别生成独立的 Key，方便单独撤销。
 
 ## License
 

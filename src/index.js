@@ -175,9 +175,16 @@ async function handleAdminApi(request, env, path) {
       return errorResponse(`Failed to fetch model list from provider: ${err.message}`, 502, "upstream_error");
     }
     const existing = new Map((provider.models || []).map((m) => [m.id, m]));
+<<<<<<< HEAD
     const merged = ids.map((mid) => existing.get(mid) || { id: mid, enabled: false, capabilities: guessCapabilities(mid) });
     // 保留原有排序，新模型追加在后面
     provider.models = merged;
+=======
+    const merged = ids.map((mid) => existing.get(mid) || { id: mid, enabled: true, capabilities: guessCapabilities(mid) });
+    // 保留原有排序，新模型追加在后面
+    provider.models = merged;
+    if (!provider.defaultModelId && merged.length) provider.defaultModelId = merged[0].id;
+>>>>>>> 742904318fe43ae4482da453d8a4644441bef539
     await saveProviders(env, providers);
     return json({ ok: true, models: provider.models });
   }

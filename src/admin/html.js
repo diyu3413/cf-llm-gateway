@@ -6,7 +6,11 @@ export function renderAdminPage(siteTitle = "CF LLM Gateway") {
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>${siteTitle} · 管理面板</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<<<<<<< HEAD
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
+=======
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Material+Symbols+Rounded" rel="stylesheet">
+>>>>>>> 742904318fe43ae4482da453d8a4644441bef539
 <style>
 :root{
   --md-primary:#6750A4; --md-on-primary:#ffffff; --md-primary-container:#EADDFF; --md-on-primary-container:#21005D;
@@ -17,7 +21,11 @@ export function renderAdminPage(siteTitle = "CF LLM Gateway") {
   --md-elevation-2: 0 3px 6px rgba(0,0,0,.10), 0 2px 4px rgba(0,0,0,.08);
 }
 *{box-sizing:border-box;}
+<<<<<<< HEAD
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;background:#F3EDF7;color:var(--md-on-surface);}
+=======
+body{margin:0;font-family:'Roboto',system-ui,sans-serif;background:#F3EDF7;color:var(--md-on-surface);}
+>>>>>>> 742904318fe43ae4482da453d8a4644441bef539
 .material-symbols-rounded{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;vertical-align:middle;font-size:20px;}
 .topbar{display:flex;align-items:center;gap:12px;padding:16px 24px;background:var(--md-surface);box-shadow:var(--md-elevation-1);position:sticky;top:0;z-index:10;}
 .topbar h1{font-size:20px;font-weight:500;margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -44,6 +52,7 @@ label{display:block;font-size:12px;color:var(--md-on-surface-variant);margin-bot
 .badge.off{background:var(--md-surface-variant);color:var(--md-on-surface-variant);}
 .model-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #eee;font-size:13px;flex-wrap:wrap;row-gap:6px;}
 .model-row .mid{flex:1;font-family:monospace;min-width:120px;word-break:break-all;}
+<<<<<<< HEAD
 .cap-chips{display:flex;gap:4px;flex-wrap:wrap;}
 .chip{display:inline-flex;align-items:center;gap:2px;font-size:10px;line-height:1.6;padding:3px 8px 3px 6px;border-radius:8px;background:transparent;color:var(--md-on-surface-variant);border:1px solid var(--md-outline);opacity:.5;}
 .chip .material-symbols-rounded{font-size:12px;}
@@ -52,6 +61,10 @@ label{display:block;font-size:12px;color:var(--md-on-surface-variant);margin-bot
 .model-search .material-symbols-rounded{font-size:16px;color:var(--md-on-surface-variant);}
 .model-search input{flex:1;width:auto;border:none;background:transparent;padding:4px 0;font-size:13px;border-radius:0;}
 .model-search input:focus{outline:none;border:none;}
+=======
+.chip{font-size:10px;padding:1px 6px;border-radius:6px;background:var(--md-surface-variant);color:var(--md-on-surface-variant);margin-right:2px;}
+.chip.on{background:var(--md-success-container);color:var(--md-success);}
+>>>>>>> 742904318fe43ae4482da453d8a4644441bef539
 .switch{position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0;}
 .switch input{opacity:0;width:0;height:0;}
 .slider{position:absolute;cursor:pointer;inset:0;background:var(--md-surface-variant);border-radius:20px;transition:.2s;}
@@ -347,6 +360,7 @@ function onPresetChange(){
 }
 
 function capChips(caps={}){
+<<<<<<< HEAD
   const map = {
     vision: { label:'视觉', icon:'visibility' },
     audio: { label:'音频', icon:'mic' },
@@ -358,6 +372,10 @@ function capChips(caps={}){
     return '<span class="chip '+(caps[k]?'on':'')+'"><span class="material-symbols-rounded">'+info.icon+'</span>'+info.label+'</span>';
   }).join('');
   return '<div class="cap-chips">'+chips+'</div>';
+=======
+  const map = { vision:'视觉', audio:'音频', video:'视频', tools:'工具调用' };
+  return Object.keys(map).map(k=>'<span class="chip '+(caps[k]?'on':'')+'">'+map[k]+'</span>').join('');
+>>>>>>> 742904318fe43ae4482da453d8a4644441bef539
 }
 
 function renderProviders(){
@@ -365,7 +383,11 @@ function renderProviders(){
   const providers = [...STATE.providers].sort((a,b)=>a.order-b.order);
   if(providers.length===0){ el.innerHTML='<div class="desc">暂无服务商，点击下方按钮添加。</div>'; return; }
   el.innerHTML = providers.map((p, idx)=>{
+<<<<<<< HEAD
     const hasModels = (p.models||[]).length > 0;
+=======
+    const models = (p.models||[]);
+>>>>>>> 742904318fe43ae4482da453d8a4644441bef539
     return '<div class="provider">'
       +'<div class="provider-head">'
         +'<div class="order-btns">'
@@ -379,6 +401,7 @@ function renderProviders(){
         +'<button class="btn text sm" onclick="deleteProvider(\\''+p.id+'\\')" style="color:var(--md-error)"><span class="material-symbols-rounded">delete</span></button>'
       +'</div>'
       +'<div class="hint">'+p.baseUrl+'</div>'
+<<<<<<< HEAD
       + (hasModels
           ? '<div class="model-search"><span class="material-symbols-rounded">search</span><input type="text" placeholder="按模型名称 / ID 筛选" id="modelFilter_'+p.id+'" oninput="renderModelList(\\''+p.id+'\\')" /></div>'
           : '')
@@ -414,6 +437,21 @@ function renderModelList(providerId){
       +'<label class="switch"><input type="checkbox" '+(m.enabled!==false?'checked':'')+' onchange="toggleModel(\\''+providerId+'\\',\\''+m.id+'\\',this.checked)"><span class="slider"></span></label>'
     +'</div>'
   ).join('');
+=======
+      +'<div id="models_'+p.id+'">'
+        + (models.length? models.map(m=>
+            '<div class="model-row">'
+              +'<input type="radio" name="def_'+p.id+'" '+(p.defaultModelId===m.id?'checked':'')+' onchange="setDefaultModel(\\''+p.id+'\\',\\''+m.id+'\\')" title="设为该服务商默认调用模型" />'
+              +'<span class="mid">'+m.id+'</span>'
+              + capChips(m.capabilities)
+              +'<label class="switch"><input type="checkbox" '+(m.enabled!==false?'checked':'')+' onchange="toggleModel(\\''+p.id+'\\',\\''+m.id+'\\',this.checked)"><span class="slider"></span></label>'
+            +'</div>'
+          ).join('')
+          : '<div class="hint">尚未导入模型，点击"搜索模型"从上游拉取。</div>')
+      +'</div>'
+    +'</div>';
+  }).join('');
+>>>>>>> 742904318fe43ae4482da453d8a4644441bef539
 }
 
 function findProvider(id){ return STATE.providers.find(p=>p.id===id); }

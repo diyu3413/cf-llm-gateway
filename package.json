@@ -1,0 +1,20 @@
+{
+  "name": "cf-llm-gateway",
+  "version": "1.0.0",
+  "description": "OpenAI 兼容的多提供商 LLM 聚合网关，部署在 Cloudflare Worker / Pages",
+  "type": "module",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node build.mjs && node test/smoke.mjs && node test/anthropic.mjs && node test/ui.mjs",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

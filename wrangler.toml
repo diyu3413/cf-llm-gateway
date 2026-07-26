@@ -1,0 +1,30 @@
+# ---- Cloudflare Workers 部署配置 ----
+# 用法：wrangler kv namespace create KV  拿到 id 填到下面，然后 wrangler deploy
+
+name = "cf-llm-gateway"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+
+# KV 绑定的变量名必须叫 KV，代码里认的就是这个名字
+[[kv_namespaces]]
+binding = "KV"
+id = "在这里填你创建的 KV 命名空间 ID"
+
+[vars]
+# 管理员密码。放在 vars 里会在控制台明文可见，
+# 更稳妥的做法是删掉这一行，改用：wrangler secret put admin_password
+# admin_password = "改成你自己的密码"
+
+# 首页伪装：访问 / 时显示哪个站点的首页。
+# 不设 = 伪装成 www.bing.com；填 off = 显示网关自带落地页。
+# 控制台 /admin 和接口 /v1/* 不受影响。
+# url = "www.bing.com"
+
+[observability]
+enabled = true
+
+# 免费版每次调用最多 50 个外部子请求。网关自己已经用「单次最多尝试模型数」
+# 兜住了（默认 6），所以这里不额外设 limits —— 免费计划对 limits 的支持
+# 时有变化，写了反而可能让 deploy 报错。需要更硬的护栏再放开下面两行：
+# [limits]
+# subrequests = 20

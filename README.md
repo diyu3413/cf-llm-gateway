@@ -72,7 +72,7 @@ cf-llm-gateway/
 ```
 
 ## 部署方式
-###Cloudflare Pages（有且仅有pages本地部署方式，使用github连接部署会出现界面未响应问题，后面会修复）
+### Cloudflare Pages（有且仅有pages本地部署方式，使用github连接部署会出现界面未响应问题，后面会修复）
 
 1. 去 `Releases` 里下载文件 [`"_worker.zip"`](https://github.com/diyu3413/cf-llm-gateway/releases/download/CF-LLM-Gateway-v0.5/_worker.zip) 文件到本地，打开 Cloudflare Dashboard → Workers & Pages → Create → Pages → 拖放文件 里，将此文件通过本地上传到Pages
 2. Pages 项目 → Settings → Functions → **KV 命名空间**：

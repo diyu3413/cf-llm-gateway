@@ -1,13 +1,12 @@
 # cf-llm-gateway
 
-把多家大模型服务商（NVIDIA NIM / Google Gemini / OpenAI 等）的 API Key 汇聚到 Cloudflare Worker/Pages 项目里，对外统一暴露一个新的、随时可重置的 API Key，同时提供 OpenAI 和 Anthropic 两种标准接口格式，可直接接入 Claude Code、AstrBot 等任何第三方项目；并借助 CF 全球边缘网络，帮你访问在国内被 wall 的模型服务商。
+把多家大模型服务商（NVIDIA NIM / Google Gemini / OpenAI 等）的 API Key 汇聚到 Cloudflare Pages 项目里，对外统一暴露一个新的、随时可重置的 API Key，同时提供 OpenAI 和 Anthropic 两种标准接口格式，可直接接入 Claude Code、AstrBot 等任何第三方项目；并借助 CF 全球边缘网络，帮你访问在国内被 wall 的模型服务商。
 
 ## 目录
 
 - [功能一览](#功能一览)
 - [目录结构](#目录结构)
-- [部署方式一](#部署方式一)
-- [部署方式二](#部署方式二)
+- [部署方式](#部署方式)
 - [使用步骤](#使用步骤)
 - [对外协议格式](#对外协议格式)
 - [调用行为说明](#调用行为说明)
@@ -72,59 +71,17 @@ cf-llm-gateway/
 └─ LICENSE (MIT)
 ```
 
-## 部署方式一：Cloudflare Workers（git 直接导入）
+## 部署方式
+###Cloudflare Pages（有且仅有pages本地部署方式，使用github连接部署会出现界面未响应问题，后面会修复）
 
-1. Fork / push 本项目到你自己的 GitHub 仓库。
-2. Cloudflare Dashboard → Workers & Pages → Create → Workers → **Import a repository**，选择该仓库。
-3. 创建 KV 命名空间：Workers & Pages → KV → Create namespace，随便起名（例如 **`llm-gateway-kv`**）。
-4. 回到该 Worker → Settings → Bindings → 添加 **KV 命名空间**：
-   - 变量名称: `KV`（必须完全一致）
-   - 选择刚创建的命名空间
-5. 设置 → 变量和密钥 → 添加变量：
-   - Name: `admin_password`，Type 选 **Text**（或用 Secret 更安全），值为你自定义的管理密码
-   - 可选：Name: `url`，Type 选 **Text**，值为要伪装的站点（见下方「首页伪装」）
-6. **改完变量必须重新部署一次**，否则新变量不会对已部署的版本生效。
-7. 部署完成后访问：
-   - API: `https://你的worker子域.workers.dev/v1/chat/completions`
-   - 管理面板: `https://你的worker子域.workers.dev/admin`
-8. 如需自定义域名，在 Worker → Triggers → 自定义域 里添加即可，API 地址随之变为
-   `https://你的域名/v1/chat/completions`。
-
-也可以本地用 wrangler 直接发布：
-
-```bash
-npm install
-npx wrangler kv namespace create KV   # 记下返回的 id，填入 wrangler.toml
-npx wrangler secret put admin_password
-npx wrangler deploy
-```
-
-> 没绑 KV 的话后台照样能打开，但改的配置一个都存不住，重新部署就全没了。面板顶部会挂红字提醒，最好别忽略它（除非是拿来当展示域名来展示webui功能）
-
-## 部署方式二：Cloudflare Pages（`_worker.js` 单文件，推荐）
-
-Pages 的 git 集成不会执行 `wrangler.toml` 里的绑定，需要在 Pages 项目设置里手动添加 KV 绑定和变量。
-
-1. 本地打包（`dist/_worker.js` 已随仓库提交，跳过这步直接用也行）：
-
-```bash
-npm install
-npm run build   # 生成 dist/_worker.js
-```
-
-2. 把仓库 push 到 GitHub，Cloudflare Dashboard → Workers & Pages → Create → Pages → 连接该仓库。
-   构建命令填 `npm run build`，输出目录填 `dist`（`_worker.js` 位于该目录根部，会被 Pages 自动识别为 Functions 入口）。
-3. Pages 项目 → Settings → Functions → **KV 命名空间**：
+1. 去 `Releases` 里下载文件 [`"_worker.zip"`](https://github.com/diyu3413/cf-llm-gateway/releases/download/CF-LLM-Gateway-v0.5/_worker.zip) 文件到本地，打开 Cloudflare Dashboard → Workers & Pages → Create → Pages → 拖放文件 里，将此文件通过本地上传到Pages
+2. Pages 项目 → Settings → Functions → **KV 命名空间**：
    - 变量名称: `KV`，选择你创建的 KV 命名空间
-4. Pages 项目 → Settings → Environment variables：
+3. Pages 项目 → Settings → Environment variables：
    - 添加 `admin_password`（Production 和 Preview 都建议设置）
    - 可选添加 `url`
-5. 回到 Deployments 点一次 **Retry deployment**，让新变量生效。
-6. 部署完成后地址形如 `https://你的项目.pages.dev`，同样支持绑定自定义域名。
-
-（也可以选择去 `Releases` 下载 `_worker.zip` 文件，使用本地上传的方式来进行部署，推荐本地上传方法）
-
-> 说明：`_worker.js` 是 `build.mjs` 把 `src/` 下所有 ES module 拼成的单文件产物，逻辑与 Workers 版完全一致，因此两种部署方式功能完全对等，任选其一即可。没用 esbuild / rollup —— 模块之间只有单向依赖、顶层标识符互不重名，顺序拼接再去掉 `import`/`export` 就够了，构建 0.1 秒，Pages 的 git 构建也不用装依赖。
+4. 回到 Deployments 点一次 **Retry deployment**，让新变量生效。
+5. 部署完成后地址形如 `https://你的项目.pages.dev`，同样支持绑定自定义域名。
 
 ## 使用步骤
 
@@ -144,8 +101,6 @@ npm run build   # 生成 dist/_worker.js
    - OpenAI 兼容：Base URL `https://你的域名/v1`，`Authorization: Bearer <key>`
    - Anthropic 兼容（Claude Code 等）：`ANTHROPIC_BASE_URL=https://你的域名`，`ANTHROPIC_AUTH_TOKEN=<key>`
    - 模型：可以留空/填 `auto`（自动按顺序故障转移），也可以先请求 `GET /v1/models` 拿到具体模型 id 直接指定。
-
-> 面板在手机上也能用：屏幕窄于 840px 时左侧功能栏会收进抽屉，点左上角的三条横杠展开；夜间模式切换在抽屉底部。
 
 ## 对外协议格式
 

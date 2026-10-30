@@ -44,11 +44,12 @@ function transform(source, file) {
   return '// ---------- ' + file + ' ----------\n' + out.trim() + '\n';
 }
 
+// 横幅不带生成时间：时间戳会让每次构建产物必然不同，CI 的「dist 与源码同步」
+// 检查就永远过不去。构建必须确定性——源码不变，产物字节级一致。
 const banner = `/**
  * LLM Gateway — OpenAI 兼容的多提供商聚合网关（Cloudflare Worker / Pages）
  * 由 build.mjs 从 src/ 自动生成，不要直接改这个文件。
  * 源码与说明：见仓库 README。MIT License.
- * 生成时间：${new Date().toISOString()}
  */
 
 `;

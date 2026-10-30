@@ -2,7 +2,6 @@
  * LLM Gateway — OpenAI 兼容的多提供商聚合网关（Cloudflare Worker / Pages）
  * 由 build.mjs 从 src/ 自动生成，不要直接改这个文件。
  * 源码与说明：见仓库 README。MIT License.
- * 生成时间：2026-10-30T19:36:51.209Z
  */
 
 // ---------- src/lib/crypto.js ----------

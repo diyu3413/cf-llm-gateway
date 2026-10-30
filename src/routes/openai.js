@@ -2,7 +2,7 @@
 // 客户端把 base_url 指到 https://你的域名/v1 就能直接用。
 
 import { jsonResponse, apiError, preflight, readJsonBody } from '../lib/http.js';
-import { verifyGatewayKey } from '../lib/auth.js';
+import { verifyGatewayKey, checkKeyRate } from '../lib/auth.js';
 import { loadConfig, loadKeys } from '../lib/config.js';
 import { proxyOpenAI, buildModelList } from '../lib/proxy.js';
 import { randomToken } from '../lib/crypto.js';
@@ -74,6 +74,13 @@ export async function handleOpenAI(request, env, ctx, url) {
   }
   const auth = await verifyGatewayKey(request, env);
   if (!auth.ok) return unauthorized(auth.reason);
+  const rate = checkKeyRate(auth.key.id, config.settings.keyRpmLimit);
+  if (!rate.ok) {
+    return jsonResponse(
+      { error: { message: '这把密钥触发了每分钟请求数上限，请稍后再试。', type: 'rate_limit_error', param: null, code: 'rate_limited' } },
+      { status: 429, headers: { 'Retry-After': String(rate.retryAfter) } }
+    );
+  }
 
   let body;
   try {

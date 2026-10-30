@@ -1,95 +1,16 @@
 // Material Design 3 样式表。
-// 色板取 M3 的 teal 基线方案（种子 #006874），亮暗两套 tonal palette 全量映射到
-// md-sys-color-* 变量；形状用 M3 shape scale（4/8/12/16/28），排版用 M3 type scale，
-// 动效用 M3 motion 的 emphasized / standard 曲线。
+// 颜色/形状/高度/状态层/动效等设计令牌全部在 ./tokens.js（两项目共用的单一事实源），
+// 这里只消费 var(--md-*)，不再出现裸的颜色和圆角值。
+// 排版用 M3 type scale，形状用 M3 shape scale，动效用 M3 motion 的曲线。
 // 全部内联进 HTML，后台整页只消耗 1 次 Worker 请求。
 //
 // 断点（移动端以 375px 为基准设计）：
 //   <=840px  侧栏收进模态抽屉，顶栏出现汉堡按钮
 //   <=600px  列表项纵向堆叠、按钮整行、对话框贴边
 
-export const UI_CSS = `
-:root{
-  --md-sys-color-primary:#006874;
-  --md-sys-color-on-primary:#ffffff;
-  --md-sys-color-primary-container:#9eeffd;
-  --md-sys-color-on-primary-container:#001f24;
-  --md-sys-color-secondary:#4a6267;
-  --md-sys-color-on-secondary:#ffffff;
-  --md-sys-color-secondary-container:#cde7ec;
-  --md-sys-color-on-secondary-container:#051f23;
-  --md-sys-color-tertiary:#525e7d;
-  --md-sys-color-on-tertiary:#ffffff;
-  --md-sys-color-tertiary-container:#dae2ff;
-  --md-sys-color-on-tertiary-container:#0e1b37;
-  --md-sys-color-error:#ba1a1a;
-  --md-sys-color-on-error:#ffffff;
-  --md-sys-color-error-container:#ffdad6;
-  --md-sys-color-on-error-container:#410002;
-  --md-sys-color-surface:#f5fafb;
-  --md-sys-color-on-surface:#171d1e;
-  --md-sys-color-surface-variant:#dbe4e6;
-  --md-sys-color-on-surface-variant:#3f484a;
-  --md-sys-color-surface-container-lowest:#ffffff;
-  --md-sys-color-surface-container-low:#eff5f6;
-  --md-sys-color-surface-container:#e9eff0;
-  --md-sys-color-surface-container-high:#e3e9ea;
-  --md-sys-color-surface-container-highest:#dee3e5;
-  --md-sys-color-outline:#6f797a;
-  --md-sys-color-outline-variant:#bfc8ca;
-  --md-sys-color-inverse-surface:#2b3133;
-  --md-sys-color-inverse-on-surface:#ecf2f3;
-  --md-sys-color-scrim:rgba(0,0,0,.4);
-  --md-sys-color-success:#2c6a43;
-  --md-sys-color-on-success-container:#00210f;
-  --md-sys-color-success-container:#b0f1c2;
-  --md-elev-1:0 1px 2px rgba(0,0,0,.30),0 1px 3px 1px rgba(0,0,0,.15);
-  --md-elev-2:0 1px 2px rgba(0,0,0,.30),0 2px 6px 2px rgba(0,0,0,.15);
-  --md-elev-3:0 4px 8px 3px rgba(0,0,0,.15),0 1px 3px rgba(0,0,0,.30);
-  /* M3 motion：emphasized 用于进出场，standard 用于状态变化 */
-  --ease-emph:cubic-bezier(.2,0,0,1);
-  --ease-emph-out:cubic-bezier(.05,.7,.1,1);
-  --ease-std:cubic-bezier(.2,0,0,1);
-  --dur-s:150ms;
-  --dur-m:250ms;
-  --dur-l:400ms;
-  color-scheme:light;
-}
-[data-theme=dark]{
-  --md-sys-color-primary:#82d3e0;
-  --md-sys-color-on-primary:#00363d;
-  --md-sys-color-primary-container:#004f58;
-  --md-sys-color-on-primary-container:#9eeffd;
-  --md-sys-color-secondary:#b1cbd0;
-  --md-sys-color-on-secondary:#1c3438;
-  --md-sys-color-secondary-container:#334b4f;
-  --md-sys-color-on-secondary-container:#cde7ec;
-  --md-sys-color-tertiary:#bac6ea;
-  --md-sys-color-on-tertiary:#24304d;
-  --md-sys-color-tertiary-container:#3b4664;
-  --md-sys-color-on-tertiary-container:#dae2ff;
-  --md-sys-color-error:#ffb4ab;
-  --md-sys-color-on-error:#690005;
-  --md-sys-color-error-container:#93000a;
-  --md-sys-color-on-error-container:#ffdad6;
-  --md-sys-color-surface:#0e1415;
-  --md-sys-color-on-surface:#dee3e5;
-  --md-sys-color-surface-variant:#3f484a;
-  --md-sys-color-on-surface-variant:#bfc8ca;
-  --md-sys-color-surface-container-lowest:#090f10;
-  --md-sys-color-surface-container-low:#171d1e;
-  --md-sys-color-surface-container:#1b2122;
-  --md-sys-color-surface-container-high:#262b2c;
-  --md-sys-color-surface-container-highest:#303637;
-  --md-sys-color-outline:#899294;
-  --md-sys-color-outline-variant:#3f484a;
-  --md-sys-color-inverse-surface:#dee3e5;
-  --md-sys-color-inverse-on-surface:#2b3133;
-  --md-sys-color-success:#94d5a8;
-  --md-sys-color-success-container:#0c4d2b;
-  --md-sys-color-on-success-container:#b0f1c2;
-  color-scheme:dark;
-}
+import { MD3_TOKENS_CSS } from './tokens.js';
+
+export const UI_CSS = MD3_TOKENS_CSS + `
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
@@ -103,7 +24,7 @@ body{
   transition:background-color var(--dur-m) var(--ease-std),color var(--dur-m) var(--ease-std);
 }
 body.nav-open{overflow:hidden}
-:focus-visible{outline:3px solid var(--md-sys-color-primary);outline-offset:2px;border-radius:4px}
+:focus-visible{outline:3px solid var(--md-sys-color-primary);outline-offset:2px;border-radius:var(--md-shape-xs)}
 svg.i{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
 svg.i.sm{width:18px;height:18px;stroke-width:2}
 
@@ -163,7 +84,7 @@ svg.i.sm{width:18px;height:18px;stroke-width:2}
   position:relative;
 }
 .navitem .pill{
-  width:56px;height:32px;border-radius:16px;display:grid;place-items:center;
+  width:56px;height:32px;border-radius:var(--md-shape-l);display:grid;place-items:center;
   transition:background-color var(--dur-m) var(--ease-std),color var(--dur-m) var(--ease-std);
   position:relative;overflow:hidden;
 }
@@ -171,8 +92,8 @@ svg.i.sm{width:18px;height:18px;stroke-width:2}
   content:"";position:absolute;inset:0;background:currentColor;opacity:0;
   transition:opacity var(--dur-s) var(--ease-std);
 }
-.navitem:hover .pill::after{opacity:.08}
-.navitem:active .pill::after{opacity:.12}
+.navitem:hover .pill::after{opacity:var(--md-state-hover)}
+.navitem:active .pill::after{opacity:var(--md-state-press)}
 .navitem[aria-selected=true] .pill{background:var(--md-sys-color-secondary-container);color:var(--md-sys-color-on-secondary-container)}
 .navitem[aria-selected=true]{color:var(--md-sys-color-on-surface)}
 .navitem .rl{font-size:12px;font-weight:500;line-height:16px;white-space:nowrap}
@@ -194,7 +115,7 @@ main{flex:1;min-width:0;padding:8px 24px 96px}
 /* ---------- 卡片 ---------- */
 .card{
   background:var(--md-sys-color-surface-container-low);
-  border-radius:16px;padding:20px;margin-bottom:16px;
+  border-radius:var(--md-shape-l);padding:20px;margin-bottom:16px;
   transition:background-color var(--dur-m) var(--ease-std),box-shadow var(--dur-m) var(--ease-std);
 }
 .card.outlined{background:var(--md-sys-color-surface);border:1px solid var(--md-sys-color-outline-variant)}
@@ -206,7 +127,7 @@ main{flex:1;min-width:0;padding:8px 24px 96px}
 .grid.three{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .stat{
-  background:var(--md-sys-color-surface-container);border-radius:16px;padding:16px 20px;
+  background:var(--md-sys-color-surface-container);border-radius:var(--md-shape-l);padding:16px 20px;
   animation:popIn var(--dur-m) var(--ease-emph-out) both;
   transition:background-color var(--dur-m) var(--ease-std);
 }
@@ -215,7 +136,7 @@ main{flex:1;min-width:0;padding:8px 24px 96px}
 /* ---------- 按钮 ---------- */
 button.btn{
   font:inherit;font-weight:500;letter-spacing:.1px;cursor:pointer;border:0;
-  min-height:40px;padding:0 24px;border-radius:20px;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:40px;padding:0 24px;border-radius:var(--md-shape-full);display:inline-flex;align-items:center;justify-content:center;gap:8px;
   background:var(--md-sys-color-primary);color:var(--md-sys-color-on-primary);
   position:relative;overflow:hidden;
   transition:box-shadow var(--dur-m) var(--ease-std),transform 90ms var(--ease-std),background-color var(--dur-m) var(--ease-std);
@@ -224,8 +145,8 @@ button.btn::after,button.icon::after,a.btn::after{
   content:"";position:absolute;inset:0;background:currentColor;opacity:0;pointer-events:none;
   transition:opacity var(--dur-s) var(--ease-std);
 }
-button.btn:hover::after,button.icon:hover::after{opacity:.08}
-button.btn:active::after,button.icon:active::after{opacity:.12}
+button.btn:hover::after,button.icon:hover::after{opacity:var(--md-state-hover)}
+button.btn:active::after,button.icon:active::after{opacity:var(--md-state-press)}
 button.btn:hover{box-shadow:var(--md-elev-1)}
 button.btn:active{transform:scale(.97)}
 button.btn:disabled{opacity:.38;cursor:not-allowed;box-shadow:none;transform:none}
@@ -234,16 +155,16 @@ button.btn.tonal{background:var(--md-sys-color-secondary-container);color:var(--
 button.btn.outlined{background:transparent;color:var(--md-sys-color-primary);border:1px solid var(--md-sys-color-outline)}
 button.btn.text{background:transparent;color:var(--md-sys-color-primary);padding:0 12px}
 button.btn.danger{background:var(--md-sys-color-error-container);color:var(--md-sys-color-on-error-container)}
-button.btn.small{min-height:32px;height:32px;padding:0 16px;font-size:13px;border-radius:16px}
+button.btn.small{min-height:32px;height:32px;padding:0 16px;font-size:13px;border-radius:var(--md-shape-full)}
 button.btn.icononly{padding:0;width:40px;min-width:40px}
 a.btn{
-  font:inherit;font-weight:500;text-decoration:none;min-height:40px;padding:0 24px;border-radius:20px;
+  font:inherit;font-weight:500;text-decoration:none;min-height:40px;padding:0 24px;border-radius:var(--md-shape-full);
   display:inline-flex;align-items:center;justify-content:center;gap:8px;position:relative;overflow:hidden;
   background:var(--md-sys-color-primary);color:var(--md-sys-color-on-primary);
 }
 button.icon{
   border:0;background:transparent;color:var(--md-sys-color-on-surface-variant);cursor:pointer;
-  width:40px;height:40px;min-width:40px;border-radius:20px;display:grid;place-items:center;
+  width:40px;height:40px;min-width:40px;border-radius:var(--md-shape-full);display:grid;place-items:center;
   position:relative;overflow:hidden;
   transition:background-color var(--dur-m) var(--ease-std),transform 90ms var(--ease-std),color var(--dur-m) var(--ease-std);
 }
@@ -262,7 +183,7 @@ button.icon.spinning svg{animation:spin 900ms linear infinite;transform-origin:5
   width:100%;font:inherit;color:var(--md-sys-color-on-surface);
   background:var(--md-sys-color-surface-container-highest);
   border:0;border-bottom:1px solid var(--md-sys-color-on-surface-variant);
-  border-radius:4px 4px 0 0;padding:12px 16px;min-height:48px;
+  border-radius:var(--md-shape-xs) var(--md-shape-xs) 0 0;padding:12px 16px;min-height:48px;
   transition:border-color var(--dur-s) var(--ease-std),background-color var(--dur-m) var(--ease-std);
 }
 .field textarea{min-height:96px;resize:vertical;font-family:"Roboto Mono",ui-monospace,monospace;font-size:13px}
@@ -270,16 +191,16 @@ button.icon.spinning svg{animation:spin 900ms linear infinite;transform-origin:5
   outline:none;border-bottom:2px solid var(--md-sys-color-primary);padding-bottom:11px;
 }
 .hint{font-size:12px;line-height:16px;color:var(--md-sys-color-on-surface-variant);margin-top:4px}
-/* 全圆角输入框：圆弧半径与 40px 高的按钮保持一致（20px） */
+/* 全圆角输入框：圆弧半径与 40px 高的按钮保持一致（药丸形） */
 .field.round input{
   border:1px solid var(--md-sys-color-outline);
-  border-radius:20px;
+  border-radius:var(--md-shape-full);
   background:var(--md-sys-color-surface-container-highest);
   padding:12px 20px;
 }
 .field.round input:focus{
   border:2px solid var(--md-sys-color-primary);
-  border-radius:20px;
+  border-radius:var(--md-shape-full);
   padding:11px 19px;
 }
 
@@ -287,7 +208,7 @@ button.icon.spinning svg{animation:spin 900ms linear infinite;transform-origin:5
 .switch{display:flex;align-items:center;gap:12px;padding:8px 0;cursor:pointer}
 .switch input{position:absolute;opacity:0;width:0;height:0}
 .switch .track{
-  width:52px;height:32px;border-radius:16px;flex:0 0 52px;position:relative;
+  width:52px;height:32px;border-radius:var(--md-shape-l);flex:0 0 52px;position:relative;
   background:var(--md-sys-color-surface-container-highest);
   border:2px solid var(--md-sys-color-outline);
   transition:background-color var(--dur-m) var(--ease-emph),border-color var(--dur-m) var(--ease-emph);
@@ -303,7 +224,7 @@ button.icon.spinning svg{animation:spin 900ms linear infinite;transform-origin:5
 
 /* ---------- Chip ---------- */
 .chip{
-  display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;
+  display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:var(--md-shape-s);
   border:1px solid var(--md-sys-color-outline-variant);color:var(--md-sys-color-on-surface-variant);
   font-size:13px;font-weight:500;background:transparent;cursor:default;
   white-space:nowrap;flex:0 0 auto;max-width:100%;overflow:hidden;text-overflow:ellipsis;
@@ -319,7 +240,7 @@ button.icon.spinning svg{animation:spin 900ms linear infinite;transform-origin:5
 /* ---------- 列表 ---------- */
 .list{display:flex;flex-direction:column;gap:8px}
 .item{
-  background:var(--md-sys-color-surface-container);border-radius:12px;padding:14px 16px;
+  background:var(--md-sys-color-surface-container);border-radius:var(--md-shape-m);padding:14px 16px;
   display:flex;gap:12px;align-items:center;flex-wrap:wrap;
   animation:fadeUp var(--dur-m) var(--ease-emph-out) both;
   transition:background-color var(--dur-m) var(--ease-std);
@@ -336,17 +257,17 @@ button.icon.spinning svg{animation:spin 900ms linear infinite;transform-origin:5
 .item .acts{display:flex;gap:4px;align-items:center;margin-left:auto;flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end}
 .item .ellipsis{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ordinal{
-  width:32px;height:32px;flex:0 0 32px;border-radius:8px;display:grid;place-items:center;
+  width:32px;height:32px;flex:0 0 32px;border-radius:var(--md-shape-s);display:grid;place-items:center;
   background:var(--md-sys-color-primary);color:var(--md-sys-color-on-primary);font-weight:500;font-size:13px;
 }
 .ordinal.off{background:var(--md-sys-color-surface-container-highest);color:var(--md-sys-color-on-surface-variant)}
 .empty{
-  border:1px dashed var(--md-sys-color-outline-variant);border-radius:16px;padding:32px 20px;text-align:center;
+  border:1px dashed var(--md-sys-color-outline-variant);border-radius:var(--md-shape-l);padding:32px 20px;text-align:center;
   color:var(--md-sys-color-on-surface-variant);animation:fadeIn var(--dur-m) var(--ease-std) both;
 }
 
 /* ---------- 表格 ---------- */
-.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;background:var(--md-sys-color-surface-container)}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--md-shape-m);background:var(--md-sys-color-surface-container)}
 table.md{width:100%;border-collapse:collapse;font-size:13px;min-width:420px}
 table.md th{
   text-align:left;font-weight:500;font-size:12px;letter-spacing:.4px;white-space:nowrap;
@@ -360,7 +281,7 @@ table.md tfoot td{font-weight:500;border-top:1px solid var(--md-sys-color-outlin
 
 /* ---------- 对话框 ---------- */
 dialog{
-  border:0;border-radius:28px;padding:24px;max-width:min(560px,calc(100vw - 32px));width:100%;
+  border:0;border-radius:var(--md-shape-xl);padding:24px;max-width:min(560px,calc(100vw - 32px));width:100%;
   max-height:calc(100vh - 48px);overflow:auto;
   background:var(--md-sys-color-surface-container-high);color:var(--md-sys-color-on-surface);
   box-shadow:var(--md-elev-3);
@@ -379,7 +300,7 @@ dialog .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:24px;fl
   transform:translate(-50%,16px);
   opacity:0;visibility:hidden;pointer-events:none;
   background:var(--md-sys-color-inverse-surface);color:var(--md-sys-color-inverse-on-surface);
-  padding:14px 16px;border-radius:8px;box-shadow:var(--md-elev-3);z-index:99;
+  padding:14px 16px;border-radius:var(--md-shape-s);box-shadow:var(--md-elev-3);z-index:99;
   max-width:min(560px,calc(100vw - 32px));
   transition:opacity var(--dur-m) var(--ease-std),transform var(--dur-m) var(--ease-emph-out),visibility var(--dur-m) var(--ease-std);
 }
@@ -387,7 +308,7 @@ dialog .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:24px;fl
 #snack:empty{display:none}
 .banner{
   background:var(--md-sys-color-error-container);color:var(--md-sys-color-on-error-container);
-  border-radius:12px;padding:14px 16px;margin-bottom:16px;
+  border-radius:var(--md-shape-m);padding:14px 16px;margin-bottom:16px;
   animation:fadeUp var(--dur-m) var(--ease-emph-out) both;
 }
 .banner.info{background:var(--md-sys-color-tertiary-container);color:var(--md-sys-color-on-tertiary-container)}
@@ -404,13 +325,13 @@ dialog .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:24px;fl
 
 /* ---------- 代码块 ---------- */
 pre.code{
-  background:var(--md-sys-color-surface-container-highest);border-radius:12px;padding:14px 16px;
+  background:var(--md-sys-color-surface-container-highest);border-radius:var(--md-shape-m);padding:14px 16px;
   overflow:auto;font-size:12.5px;line-height:1.6;margin:0;
   font-family:"Roboto Mono",ui-monospace,monospace;
 }
 .keyout{
   background:var(--md-sys-color-primary-container);color:var(--md-sys-color-on-primary-container);
-  border-radius:12px;padding:14px 16px;word-break:break-all;font-family:"Roboto Mono",ui-monospace,monospace;font-size:13px;
+  border-radius:var(--md-shape-m);padding:14px 16px;word-break:break-all;font-family:"Roboto Mono",ui-monospace,monospace;font-size:13px;
 }
 
 /* ---------- <=840px：侧栏变模态抽屉 ---------- */
@@ -422,7 +343,7 @@ pre.code{
     width:min(300px,84vw);flex-basis:auto;
     padding:12px;gap:2px;align-items:stretch;
     background:var(--md-sys-color-surface-container-low);
-    border-radius:0 16px 16px 0;box-shadow:var(--md-elev-3);
+    border-radius:0 var(--md-shape-l) var(--md-shape-l) 0;box-shadow:var(--md-elev-3);
     overflow-y:auto;overscroll-behavior:contain;
     transform:translateX(-104%);
     transition:transform var(--dur-l) var(--ease-emph);
@@ -434,16 +355,16 @@ pre.code{
   }
   .drawerhead .t{flex:1;font-size:14px;font-weight:500;letter-spacing:.5px}
   .navitem{
-    flex-direction:row;width:100%;height:56px;min-height:56px;border-radius:28px;
+    flex-direction:row;width:100%;height:56px;min-height:56px;border-radius:var(--md-shape-xl);
     padding:0 16px;gap:12px;justify-content:flex-start;
     transition:background-color var(--dur-m) var(--ease-std),color var(--dur-m) var(--ease-std);
   }
   .navitem::after{
-    content:"";position:absolute;inset:0;border-radius:28px;background:currentColor;opacity:0;
+    content:"";position:absolute;inset:0;border-radius:var(--md-shape-xl);background:currentColor;opacity:0;
     transition:opacity var(--dur-s) var(--ease-std);pointer-events:none;
   }
-  .navitem:hover::after{opacity:.08}
-  .navitem:active::after{opacity:.12}
+  .navitem:hover::after{opacity:var(--md-state-hover)}
+  .navitem:active::after{opacity:var(--md-state-press)}
   .navitem .pill{width:auto;height:auto;background:none!important;border-radius:0}
   .navitem .pill::after{display:none}
   .navitem[aria-selected=true]{background:var(--md-sys-color-secondary-container);color:var(--md-sys-color-on-secondary-container)}
@@ -461,7 +382,7 @@ pre.code{
   .topbar{padding:0 4px;gap:2px;height:60px}
   .topbar .brand{font-size:17px;gap:6px}
   .topbar .brand .long{display:none}
-  .card{padding:16px;border-radius:16px}
+  .card{padding:16px}
   .head{flex-direction:column;align-items:stretch;gap:10px;margin:12px 0 4px}
   .head .spacer{display:none}
   .head>.btn{width:100%}
@@ -482,7 +403,7 @@ pre.code{
   button.btn{padding:0 18px}
   button.btn.small{padding:0 14px}
   dialog{
-    border-radius:28px;padding:20px 16px;
+    border-radius:var(--md-shape-xl);padding:20px 16px;
     max-width:calc(100vw - 24px);max-height:calc(100vh - 32px);
   }
   dialog .actions{margin-top:20px}

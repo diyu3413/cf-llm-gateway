@@ -8,7 +8,7 @@
 // 不覆盖：extended thinking、citations、文档块、prompt caching —— 这些没有 OpenAI 对应物。
 
 import { jsonResponse, apiError, readJsonBody } from '../lib/http.js';
-import { verifyGatewayKey } from '../lib/auth.js';
+import { verifyGatewayKey, checkKeyRate } from '../lib/auth.js';
 import { loadConfig, loadKeys } from '../lib/config.js';
 import { runChain, chainFailureResponse, gatewayHeaders, accountCall } from '../lib/proxy.js';
 import { randomToken } from '../lib/crypto.js';
@@ -170,6 +170,7 @@ export function streamOpenAIToAnthropic(readable, modelName) {
   let stopReason = 'end_turn';
   let outputTokens = 0;
   let inputTokens = 0;
+  let midStreamError = ''; // 上游中途吐 {"error":...} 时记下来，流尾用 Anthropic 的 error 事件收场
   const messageId = 'msg_' + randomToken(20);
 
   function start(controller) {
@@ -195,6 +196,14 @@ export function streamOpenAIToAnthropic(readable, modelName) {
   }
 
   function handleChunk(json, controller) {
+    // 网关的 streamTailError 只在没有 [DONE] 时补发合成错误；这里再兜一层：
+    // 只要事件里有 error 字段（无论上游原发还是网关合成），按 Anthropic 协议发
+    // event: error 终止，而不是装作正常 message_stop 把残缺回答当完整回答交出去。
+    if (json.error && !Array.isArray(json.choices)) {
+      const e = json.error;
+      midStreamError = String((e && (e.message || e.msg)) || (typeof e === 'string' ? e : '')) || '上游流中途出错。';
+      return;
+    }
     if (json.usage) {
       inputTokens = json.usage.prompt_tokens || inputTokens;
       outputTokens = json.usage.completion_tokens || outputTokens;
@@ -244,6 +253,15 @@ export function streamOpenAIToAnthropic(readable, modelName) {
 
   function finish(controller) {
     if (!started) start(controller);
+    if (midStreamError) {
+      // Anthropic 流式协议允许用 event: error 终止流；客户端 SDK 会抛出而不是返回残文。
+      controller.enqueue(
+        enc.encode(
+          sseEvent('error', { type: 'error', error: { type: 'api_error', message: midStreamError } })
+        )
+      );
+      return;
+    }
     if (textOpen) {
       controller.enqueue(enc.encode(sseEvent('content_block_stop', { type: 'content_block_stop', index: nextIndex })));
       textOpen = false;
@@ -321,6 +339,13 @@ export async function handleAnthropic(request, env, ctx, url) {
 
   const config = await loadConfig(env);
   maybeFlushUsage(env, ctx, config.settings);
+  const rate = checkKeyRate(auth.key.id, config.settings.keyRpmLimit);
+  if (!rate.ok) {
+    return jsonResponse(
+      { type: 'error', error: { type: 'rate_limit_error', message: '这把密钥触发了每分钟请求数上限，请稍后再试。' } },
+      { status: 429, headers: { 'Retry-After': String(rate.retryAfter) } }
+    );
+  }
   const openaiBody = anthropicToOpenAI(body);
   const acct = { id: auth.key.id, name: auth.key.name };
   const result = await runChain({ env, config, body: openaiBody, path: 'chat/completions' });

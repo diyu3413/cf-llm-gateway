@@ -7,7 +7,8 @@
   "private": false,
   "scripts": {
     "build": "node build.mjs",
-    "test": "node build.mjs && node test/smoke.mjs && node test/anthropic.mjs && node test/ui.mjs",
+    "test": "node build.mjs && node test/smoke.mjs && node test/anthropic.mjs && node test/ui.mjs && node test/agent-embed.mjs",
+    "sync-agent": "node scripts/sync-agent.mjs",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   },
@@ -16,5 +17,8 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "allowScripts": {
+    "workerd@1.20261023.1": true
   }
 }

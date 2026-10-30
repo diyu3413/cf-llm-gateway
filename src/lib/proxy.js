@@ -178,6 +178,71 @@ async function peekStream(res, waitMs) {
   return { body, head };
 }
 
+// 上游流的「中途错误」：200 已过、首块也正常，但流到一半吐了个 {"error":...} 就断。
+// peekStream 只看得住首块，这里负责收尾：检测到中途错误就在流尾追加一个合成错误
+// 事件。内容原样透传、一个字节不改；标准 OpenAI SDK 解析不到 choices 会跳过这行，
+// 而 agent 这类自动重试方则能据 type 判定这轮回答作废、整轮重试。
+// 导出给内嵌 Agent 复用：合并部署里 agent 直调 runChain 时，流尾错误收口逻辑保持一致
+export function streamTailError(readable) {
+  const dec = new TextDecoder();
+  const enc = new TextEncoder();
+  let buf = '';
+  let sawError = '';
+  let sawDone = false;
+
+  function scanLine(line) {
+    const t = line.trim();
+    if (!t.startsWith('data:')) return;
+    const payload = t.slice(5).trim();
+    if (!payload) return;
+    if (payload === '[DONE]') { sawDone = true; return; }
+    if (payload.indexOf('"error"') < 0) return;
+    try {
+      const json = JSON.parse(payload);
+      const e = json && json.error;
+      if (!e) return;
+      const msg = String((e && (e.message || e.msg)) || (typeof e === 'string' ? e : '')).slice(0, 300);
+      if (msg) sawError = msg;
+    } catch {
+      /* 不完整的块，跳过 */
+    }
+  }
+
+  return readable.pipeThrough(
+    new TransformStream({
+      transform(chunk, controller) {
+        controller.enqueue(chunk);
+        buf += dec.decode(chunk, { stream: true });
+        let i;
+        while ((i = buf.indexOf('\n')) >= 0) {
+          scanLine(buf.slice(0, i));
+          buf = buf.slice(i + 1);
+        }
+        // 上游一直不发换行时别让缓冲无限涨
+        if (buf.length > 262144) {
+          scanLine(buf);
+          buf = '';
+        }
+      },
+      flush(controller) {
+        buf += dec.decode();
+        if (buf) scanLine(buf);
+        if (sawError && !sawDone) {
+          controller.enqueue(
+            enc.encode(
+              'data: ' +
+                JSON.stringify({
+                  error: { message: '上游流中途出错：' + sawError, type: 'gateway_mid_stream_error', param: null, code: 'mid_stream_error' },
+                }) +
+                '\n\n'
+            )
+          );
+        }
+      },
+    })
+  );
+}
+
 /** 首块里能看出是错误就返回错误文案，否则返回空串。 */
 function streamErrorIn(head) {
   const s = String(head || '').trim();
@@ -386,7 +451,8 @@ export async function proxyOpenAI({ env, config, path, body, requestId, embeddin
 
   const upstreamBody = result.body || res.body;
   if (body.stream) {
-    const rewritten = wantRewrite ? rewriteStream(upstreamBody, model.model, clientName) : upstreamBody;
+    const watched = streamTailError(upstreamBody);
+    const rewritten = wantRewrite ? rewriteStream(watched, model.model, clientName) : watched;
     return new Response(meter(rewritten, true), { status: res.status, headers });
   }
   if (!wantRewrite || model.model === clientName) {

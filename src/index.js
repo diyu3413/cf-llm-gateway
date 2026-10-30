@@ -8,7 +8,7 @@
 //  - /v1/models 带 Cache-Control，客户端一分钟内不会反复来问。
 //  - 上游调用是子请求，Cloudflare 不计入请求数，所以故障转移本身不花额度。
 
-import { jsonResponse, htmlResponse, apiError, preflight } from './lib/http.js';
+import { jsonResponse, htmlResponse, apiError, preflight, CORS_HEADERS } from './lib/http.js';
 import { handleAdminApi } from './routes/admin.js';
 import { handleOpenAI, isOpenAiPath } from './routes/openai.js';
 import { handleAnthropic, isAnthropicPath } from './routes/anthropic.js';
@@ -23,16 +23,37 @@ export default {
     } catch (err) {
       const message = (err && err.message) || String(err);
       if (!env || env.SILENCE_ERRORS !== '1') console.error('gateway error:', message);
-      return apiError(500, '网关内部错误：' + message, 'server_error');
+      const res = apiError(500, '网关内部错误：' + message, 'server_error');
+      // 管理台路径的任何响应（包括 500）都不带 CORS，理由见 withoutCors。
+      try {
+        if (new URL(request.url).pathname.startsWith('/admin')) return withoutCors(res);
+      } catch {
+        /* URL 解析不了就按普通响应给 */
+      }
+      return res;
     }
   },
 };
+
+// 管理台只被同源访问，不需要 CORS。以前所有响应统一套 ACAO:*，虽然 SameSite=Strict
+// 的会话 Cookie 让跨站请求带不上凭证、实际读不到东西，但这个安全取决于 Cookie 属性
+// 不被改动。现在管理台响应一律剥掉 CORS 头，把口子彻底关死；/v1/* 保持放开（浏览器
+// 端的第三方客户端要直连）。
+function withoutCors(res) {
+  const headers = new Headers(res.headers);
+  for (const k of Object.keys(CORS_HEADERS)) headers.delete(k);
+  return new Response(res.body, { status: res.status, headers });
+}
 
 async function route(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '') || '/';
 
-  if (request.method === 'OPTIONS') return preflight();
+  if (request.method === 'OPTIONS') {
+    // 管理台不接受跨域预检，返回体保持干净。
+    if (path === '/admin' || path.startsWith('/admin/')) return new Response(null, { status: 204 });
+    return preflight();
+  }
 
   if (path === '/favicon.ico') {
     return new Response(null, { status: 204, headers: { 'Cache-Control': 'public, max-age=604800' } });
@@ -47,10 +68,10 @@ async function route(request, env, ctx) {
   }
 
   if (path === '/admin/api' || path.startsWith('/admin/api/')) {
-    return handleAdminApi(request, env, ctx, url);
+    return withoutCors(await handleAdminApi(request, env, ctx, url));
   }
   if (path === '/admin') {
-    return htmlResponse(renderAdminPage());
+    return withoutCors(htmlResponse(renderAdminPage()));
   }
 
   if (isAnthropicPath(path)) {

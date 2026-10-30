@@ -162,6 +162,9 @@ async function stateResponse(env, config) {
   return jsonResponse({
     ok: true,
     kvBound: hasKv(env),
+    // 合并部署（Workers 版）绑定了 DO/D1/R2，管理台才会显示「Agent」入口；
+    // Pages 纯网关产物没有这些绑定，恒为 false。注意 D1 绑定名是 DB（agent 侧惯用名）。
+    agent: Boolean(env.SESSIONS && env.DB && env.WORKSPACE),
     presets: PROVIDER_PRESETS,
     config: {
       providers: config.providers.map(redactProvider),
@@ -459,6 +462,7 @@ async function saveSettings(env, config, body) {
     headerTimeoutMs: clampInt(s.headerTimeoutMs, 3000, 120000, DEFAULT_SETTINGS.headerTimeoutMs),
     cooldownSeconds: clampInt(s.cooldownSeconds, 0, 86400, DEFAULT_SETTINGS.cooldownSeconds),
     usageFlushSeconds: clampInt(s.usageFlushSeconds, 30, 86400, DEFAULT_SETTINGS.usageFlushSeconds),
+    keyRpmLimit: clampInt(s.keyRpmLimit, 0, 600, DEFAULT_SETTINGS.keyRpmLimit),
   };
   await saveConfig(env, config);
   return jsonResponse({ ok: true, settings: config.settings });

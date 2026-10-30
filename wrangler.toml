@@ -1,8 +1,24 @@
-# ---- Cloudflare Workers 部署配置 ----
-# 用法：wrangler kv namespace create KV  拿到 id 填到下面，然后 wrangler deploy
+# ---- Cloudflare 部署配置（Worker / GitHub Workers Builds 轨道）----
+#
+# 本仓库有两条部署轨道，用的是同一份源码：
+#  A. Workers 合并版（本文件）：网关 + 内嵌 Agent，wrangler deploy 或 GitHub 连接部署。
+#     需要下面的 D1 / R2 / Durable Objects 绑定（agent 的会话、文件工作区、定时任务）。
+#  B. Pages 纯网关版：node build.mjs 生成 dist/_worker.js，去 Pages 控制台拖拽上传。
+#     该产物只含网关文件，不需要也读不到本文件的绑定；环境变量（admin_password、url）
+#     在 Pages 项目设置里配。
+#
+# 首次部署 A 轨道：
+#   1. wrangler kv namespace create KV          → 把 id 填到下面（想复用 Pages 上的
+#      提供商/模型/密钥配置，就填 Pages 项目绑定的同一个命名空间 ID）
+#   2. wrangler d1 create agent-web             → database_name/database_id 填到下面
+#   3. wrangler r2 bucket create agent-workspace
+#   4. wrangler d1 migrations apply DB --remote
+#   5. wrangler secret put admin_password       （或部署后在 dashboard 的变量设置里加）
+#   6. wrangler deploy
+#   资源 ID 只是标识符不是凭证，提交进 GitHub 仓库是安全的。
 
 name = "cf-llm-gateway"
-main = "src/index.js"
+main = "src/combined.js"
 compatibility_date = "2026-07-01"
 
 # KV 绑定的变量名必须叫 KV，代码里认的就是这个名字
@@ -10,21 +26,38 @@ compatibility_date = "2026-07-01"
 binding = "KV"
 id = "在这里填你创建的 KV 命名空间 ID"
 
-[vars]
-# 管理员密码。放在 vars 里会在控制台明文可见，
-# 更稳妥的做法是删掉这一行，改用：wrangler secret put admin_password
-# admin_password = "改成你自己的密码"
+# ---- Agent 专用绑定（纯网关部署用不到，Pages 也不读这些）----
 
-# 首页伪装：访问 / 时显示哪个站点的首页。
-# 不设 = 伪装成 www.bing.com；填 off = 显示网关自带落地页。
-# 控制台 /admin 和接口 /v1/* 不受影响。
-# url = "www.bing.com"
+[[d1_databases]]
+binding = "DB"
+database_name = "agent-web"
+database_id = "在这里填你创建的 D1 数据库 ID"
+
+[[r2_buckets]]
+binding = "WORKSPACE"
+bucket_name = "agent-workspace"
+
+# 每个会话一个 DO 实例：消息历史、WebSocket、定时任务（alarm）都在里面。
+# 免费版要求 DO 必须是 SQLite 类，migrations 不能删。
+[[durable_objects.bindings]]
+name = "SESSIONS"
+class_name = "AgentSession"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AgentSession"]
 
 [observability]
 enabled = true
 
-# 免费版每次调用最多 50 个外部子请求。网关自己已经用「单次最多尝试模型数」
-# 兜住了（默认 6），所以这里不额外设 limits —— 免费计划对 limits 的支持
-# 时有变化，写了反而可能让 deploy 报错。需要更硬的护栏再放开下面两行：
-# [limits]
-# subrequests = 20
+# 免费版每次调用最多 50 个外部子请求。网关调用链已被「单次最多尝试模型数」
+# 兜住（默认 6），agent 的模型调用走进程内 runChain 不占子请求。
+# [vars] 段保持注释：变量（admin_password、url 等）一律在 dashboard 项目设置里配，
+# 写在这里会每次部署覆盖 dashboard 的值。
+# [vars]
+# url = "www.bing.com"
+
+[limits]
+# 合并版最坏情况：网关链路 6 + agent 单轮工具循环（默认 12 次模型调用 + 少量上游重试）
+# 留出余量；免费版上限 50。
+subrequests = 40

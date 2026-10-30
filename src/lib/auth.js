@@ -104,6 +104,27 @@ export async function isAdmin(request, env) {
 
 // ---------- 网关自签发的 API key ----------
 
+// 按密钥限速：纯内存滑动窗口，和登录限速同一思路 —— isolate 重启就清零，
+// 但对「防 agent 这类自动循环的客户端失控打爆上游」这种软护栏足够，犯不着为它花 KV 写额度。
+const keyRates = new Map(); // keyId -> { winStart, n }
+const RATE_WINDOW_MS = 60_000;
+
+export function checkKeyRate(keyId, limit) {
+  limit = Math.max(0, Number(limit) || 0);
+  if (!limit) return { ok: true };
+  const now = Date.now();
+  let rec = keyRates.get(keyId);
+  if (!rec || now - rec.winStart >= RATE_WINDOW_MS) {
+    rec = { winStart: now, n: 0 };
+    keyRates.set(keyId, rec);
+  }
+  rec.n += 1;
+  if (rec.n > limit) {
+    return { ok: false, retryAfter: Math.max(1, Math.ceil((rec.winStart + RATE_WINDOW_MS - now) / 1000)) };
+  }
+  return { ok: true };
+}
+
 export function generateApiKey() {
   return 'sk-gw-' + randomToken(44);
 }

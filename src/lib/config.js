@@ -30,6 +30,7 @@ export const DEFAULT_SETTINGS = {
   peekStreamErrors: true, // 流式响应先看一眼首块，识破 200 但错误藏在流里的情况
   trackUsage: true, // 按网关密钥记调用次数与 token 数
   usageFlushSeconds: 300, // 用量落 KV 的最小间隔，越大越省写额度
+  keyRpmLimit: 0, // 单把网关密钥每分钟请求数上限，0 = 不限制（内存滑窗，防自动循环的客户端失控）
 };
 
 export const DEFAULT_CONFIG = {

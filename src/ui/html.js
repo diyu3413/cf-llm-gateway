@@ -18,6 +18,10 @@ export function renderAdminPage() {
     '<link rel="icon" href="' + FAVICON + '">\n' +
     '<style>' + UI_CSS + '</style>\n' +
     '</head>\n<body>\n<div id="root"></div>\n<div id="snack" role="status" aria-live="polite"></div>\n' +
+    // wrangler 的 esbuild 会往函数体注入 __name() 注解；函数经 toString() 内联进
+    // 浏览器后拿不到模块作用域里的那个 helper。Pages 产物（build.mjs）没有这一层，
+    // 垫片在这里是空操作，两种部署都安全。
+    '<script>window.__name=window.__name||function(f){return f;};<' + '/script>\n' +
     '<script>(' + uiApp.toString() + ')();<' + '/script>\n' +
     '</body>\n</html>'
   );

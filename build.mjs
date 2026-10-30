@@ -24,6 +24,7 @@ const ORDER = [
   'src/lib/discovery.js',
   'src/lib/chain.js',
   'src/lib/proxy.js',
+  'src/ui/tokens.js',
   'src/ui/css.js',
   'src/ui/app.js',
   'src/ui/html.js',

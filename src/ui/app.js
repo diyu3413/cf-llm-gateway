@@ -41,6 +41,7 @@ export function uiApp() {
     bolt: '<path d="M13 2.5 5.5 13.5H11l-1 8 7.5-11H12l1-8Z"/>',
     star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.25 4.15 1 5.85L12 16.95 6.75 19.7l1-5.85L3.5 9.7l5.9-.9L12 3.5Z"/>',
     mark: '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.2v3.4M12 18.4v3.4M2.2 12h3.4M18.4 12h3.4"/><path d="M5.1 5.1l2.4 2.4M16.5 16.5l2.4 2.4M18.9 5.1l-2.4 2.4M7.5 16.5l-2.4 2.4"/>',
+    bot: '<rect x="4.5" y="8.5" width="15" height="11" rx="3"/><path d="M12 8.5V4.5M8.5 4.5h7"/><circle cx="9" cy="14" r="1.2"/><circle cx="15" cy="14" r="1.2"/><path d="M9.5 17h5"/>',
   };
 
   function svg(name, cls) {
@@ -117,6 +118,7 @@ export function uiApp() {
   async function loadState() {
     var data = await api('state');
     S.kvBound = data.kvBound;
+    S.agent = Boolean(data.agent); // 合并部署才有：左侧 rail 显示 Agent 入口
     S.presets = data.presets;
     S.config = data.config;
     S.keys = data.keys;
@@ -188,6 +190,12 @@ export function uiApp() {
       return '<button class="navitem" type="button" data-tab="' + t.id + '" aria-selected="' + (TAB === t.id) + '">' +
         '<span class="pill">' + svg(t.icon) + '</span><span class="rl">' + t.label + '</span></button>';
     }).join('');
+    // 内嵌 Agent：只有合并部署（绑定了 DO/D1/R2）才出现这个入口；
+    // Pages 纯网关产物里 state.agent 为 false，自动隐藏。
+    if (S.agent) {
+      nav += '<button class="navitem" type="button" data-href="/agent" title="文件工作区 Agent">' +
+        '<span class="pill">' + svg('bot') + '</span><span class="rl">Agent</span></button>';
+    }
 
     return '' +
       '<header class="topbar">' +
@@ -238,6 +246,9 @@ export function uiApp() {
   function bindShell() {
     root.querySelectorAll('.navitem[data-tab]').forEach(function (b) {
       b.onclick = function () { TAB = b.dataset.tab; render(); };
+    });
+    root.querySelectorAll('.navitem[data-href]').forEach(function (b) {
+      b.onclick = function () { location.href = b.dataset.href; };
     });
     bindTheme();
     $('#menuBtn').onclick = toggleNav;
@@ -474,7 +485,10 @@ export function uiApp() {
       '<div class="field" style="margin-bottom:12px"><label for="filter">筛选（共 ' + r.count + ' 个）</label><input id="filter" placeholder="输入关键字，比如 flash / pro / vl"></div>' +
       '<div class="row" style="margin-bottom:8px"><button class="btn text small" id="selAll">全选当前</button><button class="btn text small" id="selNone">清空</button>' +
       '<span class="spacer" style="flex:1"></span><span class="body-s muted" id="cnt">已选 0</span></div>' +
-      '<div class="scroll" id="mlist"></div>';
+      '<div class="scroll" id="mlist"></div>' +
+      // 拉取成功也保留手工入口：上游 /models 不全、私有部署改名、或只想加某一个时用得上
+      '<p class="body-s muted" style="margin:12px 0 0">列表里没有的模型，直接手工填上游模型 ID（逗号分隔），确认时会一并加入。</p>' +
+      '<div class="field"><label for="manual">手工添加（逗号分隔，可与上方勾选并用）</label><input id="manual" class="mono" placeholder="比如 gpt-5-chat, my-private-model"></div>';
 
     function paint() {
       var q = ($('#filter', dlg).value || '').toLowerCase();
@@ -512,10 +526,13 @@ export function uiApp() {
 
     $('#dlgOk', dlg).onclick = async function () {
       var picked = Object.keys(discovered.picked);
-      if (!picked.length) return toast('先勾选要调用的模型');
-      var payload = picked.map(function (id) {
+      var manual = ($('#manual', dlg).value || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+      // 手工填的和勾选的合并去重（同一上游模型 ID 重复添加服务端本来就会跳过）
+      var ids = picked.concat(manual.filter(function (id) { return picked.indexOf(id) < 0; }));
+      if (!ids.length) return toast('先勾选或手工填至少一个模型');
+      var payload = ids.map(function (id) {
         var m = discovered.list.filter(function (x) { return x.id === id; })[0];
-        return { id: id, kind: m.kind, caps: m.caps };
+        return m ? { id: id, kind: m.kind, caps: m.caps } : { id: id };
       });
       try {
         var res = await api('models/add', { providerId: providerId, models: payload });
@@ -785,6 +802,7 @@ export function uiApp() {
       '<div class="card"><h3 class="title-m">接口</h3>' +
       sw('allowAnonymousModels', '/v1/models 允许匿名访问', '有些客户端会在填 key 之前先拉一次模型列表。除非遇到问题，否则保持关闭。', s.allowAnonymousModels) +
       sw('exposeProviderInList', '模型列表里显示提供商', '在 owned_by 字段里写上提供商名字。', s.exposeProviderInList) +
+      numField('keyRpmLimit', '单密钥每分钟请求上限（0 = 不限制）', s.keyRpmLimit, '内存滑动窗口限速，isolate 重启即清零。给 agent 这类自动循环的客户端设个上限，防止失控打爆上游。') +
       '</div>' +
       '<div class="card"><h3 class="title-m">用量统计</h3>' +
       sw('trackUsage', '记录每把密钥的调用次数与 tokens', '关掉后「用量」页不再增加新数据，转发路径上也省掉一次响应体扫描。', s.trackUsage) +
